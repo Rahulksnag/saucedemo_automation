@@ -6,47 +6,47 @@ pipeline {
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 // Checkout the repo
-                git url: 'https://github.com/Rahulksnag/saucedemo_automation.git', branch: 'main'
+                git branch: 'main', url: 'https://github.com/Rahulksnag/saucedemo_automation.git'
             }
         }
 
         stage('Setup Python Environment') {
             steps {
-                // Create virtual environment
-                bat 'python -m venv venv'
-
-                // Activate venv and upgrade pip
-                bat "${env.VENV_PATH} && pip install --upgrade pip"
-
-                // Install dependencies from requirements.txt
-                bat "${env.VENV_PATH} && pip install -r requirements.txt"
+                echo "Creating virtual environment and installing dependencies..."
+                bat '''
+                    python -m venv venv
+                    call venv\\Scripts\\activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+                '''
             }
         }
 
         stage('Run Tests') {
             steps {
-                // Run pytest with Allure results directory
-                bat "${env.VENV_PATH} && pytest --alluredir=reports/allure-results -v -s"
+                echo "Running tests with pytest..."
+                bat '''
+                    call venv\\Scripts\\activate
+                    pytest --alluredir=reports/allure-results -v -s
+                '''
             }
         }
 
         stage('Generate Allure Report') {
-    steps {
-        allure includeProperties: false, jdk: '', commandline: 'allure', results: [[path: 'reports/allure-results']]
-    }
-}
-
-    }
-}
-
+            steps {
+                echo "Generating Allure report..."
+                allure includeProperties: false, jdk: '', commandline: 'allure', results: [[path: 'reports/allure-results']]
+            }
+        }
     }
 
     post {
         always {
-            echo "Tests completed. Check Allure report."
+            echo "Tests completed. Check the Allure report section in Jenkins."
         }
     }
 }
