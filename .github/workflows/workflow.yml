@@ -2,54 +2,51 @@ name: Saucedemo Automation Tests
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
   test:
+    name: Run Selenium Tests with Allure
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout code
-      - name: Checkout repository
+      # Step 1: Checkout the repo
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ Set up Python environment
+      # Step 2: Set up Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: '3.10'
 
-      # 3️⃣ Install dependencies
+      # Step 3: Install dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install allure-pytest
 
-      # 4️⃣ Run pytest with Allure
-      - name: Run Pytest tests
+      # Step 4: Run tests and collect allure results
+      - name: Run PyTest tests
         run: |
-          pytest --alluredir=reports/allure-results --html=reports/pytest_html_report.html --self-contained-html
+          pytest --alluredir=reports/allure-results
 
-      # 5️⃣ Generate Allure Report
+      # Step 5: Generate Allure Report
       - name: Generate Allure Report
-        run: |
-          mkdir -p reports/allure-report
-          allure generate reports/allure-results -o reports/allure-report --clean
+        uses: simple-elf/allure-report-action@v1.7
+        with:
+          allure_results: reports/allure-results
+          allure_report: reports/allure-report
+          allure_history: allure-history
 
-      # 6️⃣ Upload Allure Report as GitHub Artifact
-      - name: Upload Allure Report
+      # Step 6: Upload Allure results as artifacts (for viewing/download)
+      - name: Upload Allure Results
         uses: actions/upload-artifact@v4
         with:
-          name: allure-report
+          name: allure-results
           path: reports/allure-report
 
-#
-      # 7️⃣ Upload Pytest HTML Report
-      - name: Upload Pytest HTML Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: pytest-html-report
-          path: reports/pytest_html_report.html
