@@ -39,21 +39,28 @@ jobs:
           wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
           sudo apt install -y ./google-chrome-stable_current_amd64.deb
 
-      # Step 5: Run tests (headless mode)
+      # Step 5: Run tests and collect Allure results
       - name: Run PyTest tests
         run: |
+          mkdir -p reports/allure-results
           pytest --alluredir=reports/allure-results --disable-warnings -v
 
-      # Step 6: Generate Allure Report
-      - name: Generate Allure Report
-        uses: simple-elf/allure-report-action@v1.7
-        with:
-          allure_results: reports/allure-results
-          allure_report: reports/allure-report
-          allure_history: allure-history
+      # Step 6: Debug Allure results (optional, useful for CI)
+      - name: List Allure Results
+        run: |
+          echo "Contents of Allure results:"
+          ls -R reports/allure-results
 
-      # Step 7: Upload Allure results as artifacts (for viewing/download)
-      - name: Upload Allure Results
+      # Step 7: Generate Allure Report manually
+      - name: Generate Allure Report
+        run: |
+          pip install allure-pytest
+          mkdir -p reports/allure-report
+          allure generate reports/allure-results -o reports/allure-report --clean
+          echo "Allure report generated at reports/allure-report"
+
+      # Step 8: Upload Allure report as artifact
+      - name: Upload Allure Report
         uses: actions/upload-artifact@v4
         with:
           name: allure-report
