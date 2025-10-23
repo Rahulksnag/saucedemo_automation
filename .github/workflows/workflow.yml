@@ -24,15 +24,15 @@ jobs:
         with:
           python-version: '3.11'
 
-      # Step 3: Install dependencies
-      - name: Install Python dependencies
+      # Step 3: Install Python dependencies
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install selenium webdriver-manager allure-pytest
+          pip install selenium webdriver-manager allure-pytest pytest-html
 
-      # Step 4: Install Chrome and required libraries for headless mode
-      - name: Install Chrome and libraries
+      # Step 4: Install Chrome and libraries for headless mode
+      - name: Install Chrome
         run: |
           sudo apt-get update
           sudo apt-get install -y wget unzip libnss3 libxss1 libappindicator3-1 fonts-liberation libatk-bridge2.0-0 libgtk-3-0 libx11-xcb1 libasound2
@@ -40,7 +40,7 @@ jobs:
           sudo apt install -y ./google-chrome-stable_current_amd64.deb
 
       # Step 5: Install Allure Commandline
-      - name: Install Allure Commandline
+      - name: Install Allure CLI
         run: |
           wget https://github.com/allure-framework/allure2/releases/download/2.29.0/allure-2.29.0.tgz
           tar -zxvf allure-2.29.0.tgz -C /opt/
@@ -48,33 +48,28 @@ jobs:
           allure --version
 
       # Step 6: Run tests and collect Allure results
-      - name: Run PyTest tests
+      - name: Run PyTest with Allure
         run: |
           mkdir -p reports/allure-results
           pytest --alluredir=reports/allure-results --disable-warnings -v
 
       # Step 7: Debug Allure results
-      - name: List Allure Results
+      - name: Debug Allure Results
         run: |
-          echo "Workspace: $GITHUB_WORKSPACE"
-          echo "Listing reports/allure-results contents:"
+          echo "Listing reports/allure-results"
           ls -lR reports/allure-results || true
-          echo "File sizes and first 20 lines of JSON files:"
-          for f in reports/allure-results/*; do
-            echo "=== $f ==="
-            ls -lh "$f"
-            head -n 20 "$f" || true
-          done
+          echo "Number of test-case JSON files:"
+          find reports/allure-results -type f -name "*.json" | wc -l
 
-      # Step 8: Generate Allure report
+      # Step 8: Generate Allure Report
       - name: Generate Allure Report
         run: |
           mkdir -p reports/allure-report
           if [ "$(ls -A reports/allure-results)" ]; then
             allure generate reports/allure-results -o reports/allure-report --clean
-            echo "✅ Allure report generated successfully at reports/allure-report"
+            echo "✅ Allure report generated at reports/allure-report"
           else
-            echo "⚠️ No Allure results found! Skipping report generation."
+            echo "⚠️ No Allure results found, skipping report generation."
           fi
           ls -lR reports/allure-report
 
