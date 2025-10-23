@@ -9,7 +9,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                // Checkout the repo
+                echo "Checking out the code from GitHub..."
                 git branch: 'main', url: 'https://github.com/Rahulksnag/saucedemo_automation.git'
             }
         }
@@ -17,29 +17,48 @@ pipeline {
         stage('Setup Python Environment') {
             steps {
                 echo "Creating virtual environment and installing dependencies..."
-                bat '''
+                bat """
                     python -m venv venv
-                    call venv\\Scripts\\activate
+                    call ${VENV_PATH}
                     pip install --upgrade pip
                     pip install -r requirements.txt
-                '''
+                """
             }
         }
 
         stage('Run Tests') {
-            steps {
-                echo "Running tests with pytest..."
-                bat '''
-                    call venv\\Scripts\\activate
-                    pytest --alluredir=reports/allure-results -v -s
-                '''
+            parallel {
+                stage('Chrome Tests') {
+                    steps {
+                        echo "Running tests on Chrome..."
+                        bat """
+                            call ${VENV_PATH}
+                            pytest --browser chrome --alluredir=reports/allure-results/chrome -v -s
+                        """
+                    }
+                }
+                stage('Edge Tests') {
+                    steps {
+                        echo "Running tests on Edge..."
+                        bat """
+                            call ${VENV_PATH}
+                            pytest --browser edge --alluredir=reports/allure-results/edge -v -s
+                        """
+                    }
+                }
             }
         }
 
         stage('Generate Allure Report') {
             steps {
                 echo "Generating Allure report..."
-                allure includeProperties: false, jdk: '', commandline: 'allure', results: [[path: 'reports/allure-results']]
+                allure([
+                    includeProperties: false,
+                    results: [
+                        [path: 'reports/allure-results/chrome'],
+                        [path: 'reports/allure-results/edge']
+                    ]
+                ])
             }
         }
     }
@@ -47,6 +66,7 @@ pipeline {
     post {
         always {
             echo "Tests completed. Check the Allure report section in Jenkins."
+            archiveArtifacts artifacts: 'reports/allure-results/**', fingerprint: true
         }
     }
 }
