@@ -28,7 +28,7 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                echo "Running all tests on both Chrome and Edge..."
+                echo "Running all tests on both Chrome and Edge in headless mode..."
                 bat """
                     call ${VENV_PATH}
                     pytest --alluredir=reports/allure-results --disable-warnings -v
@@ -41,7 +41,8 @@ pipeline {
                 echo "Generating Allure report..."
                 allure([
                     includeProperties: false,
-                    results: [[path: 'reports/allure-results']]
+                    results: [[path: 'reports/allure-results']],
+                    installation: 'Allure'  // Use the Allure installation configured in Jenkins
                 ])
             }
         }
