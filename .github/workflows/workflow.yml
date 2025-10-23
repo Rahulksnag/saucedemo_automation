@@ -11,7 +11,7 @@ on:
 jobs:
   test:
     name: Run Selenium Tests with Allure
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       # Step 1: Checkout the repo
@@ -35,7 +35,8 @@ jobs:
       - name: Install Chrome and required libraries
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget unzip fontconfig libnss3 libgconf-2-4 libxss1 libappindicator3-1 libasound2
+          sudo apt-get install -y wget unzip libnss3 libxss1 libappindicator3-1 fonts-liberation
+
           wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
           sudo apt install -y ./google-chrome-stable_current_amd64.deb
 
