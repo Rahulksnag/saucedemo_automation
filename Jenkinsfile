@@ -41,8 +41,7 @@ pipeline {
                 echo "Generating Allure report..."
                 allure([
                     includeProperties: false,
-                    results: [[path: 'reports/allure-results']],
-                    installation: 'Allure'  // Use the Allure installation configured in Jenkins
+                    results: [[path: 'reports/allure-results']]
                 ])
             }
         }
