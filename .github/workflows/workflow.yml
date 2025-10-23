@@ -1,72 +1,57 @@
-name: Saucedemo Automation Tests
+name: Generate Allure Report from Existing Results
 
 on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch:  # allows manual triggering
 
 jobs:
-  test:
-    name: Run Selenium Tests with Allure
+  allure-report:
     runs-on: ubuntu-22.04
 
     steps:
-      - name: Checkout code
+      # Step 1: Checkout repo
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      # Step 2: Install Java (Allure needs Java)
+      - name: Set up Java
+        uses: actions/setup-java@v3
         with:
-          python-version: '3.11'
+          distribution: temurin
+          java-version: '17'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install selenium webdriver-manager allure-pytest pytest-html
-
-      - name: Install Chrome
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget unzip libnss3 libxss1 libappindicator3-1 fonts-liberation libatk-bridge2.0-0 libgtk-3-0 libx11-xcb1 libasound2
-          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo apt install -y ./google-chrome-stable_current_amd64.deb
-
-      - name: Install Allure CLI
+      # Step 3: Install Allure CLI
+      - name: Install Allure
         run: |
           wget https://github.com/allure-framework/allure2/releases/download/2.29.0/allure-2.29.0.tgz
           tar -zxvf allure-2.29.0.tgz -C /opt/
           sudo ln -sf /opt/allure-2.29.0/bin/allure /usr/bin/allure
           allure --version
 
-      - name: Run PyTest with Allure
+      # Step 4: Verify existing allure-results
+      - name: List Allure Results
         run: |
-          mkdir -p reports/allure-results
-          pytest --alluredir=reports/allure-results --disable-warnings -v
+          if [ -d "reports/allure-results" ]; then
+            echo "Found existing allure-results"
+            ls -lR reports/allure-results
+          else
+            echo "❌ No allure-results found!"
+            exit 1
+          fi
 
-      - name: Debug Allure Results
-        run: |
-          echo "Listing reports/allure-results"
-          ls -lR reports/allure-results
-          echo "Number of JSON test-case files:"
-          find reports/allure-results -type f -name "*.json" | wc -l
-
+      # Step 5: Generate Allure Report
       - name: Generate Allure Report
         run: |
           mkdir -p reports/allure-report
-          if [ "$(ls -A reports/allure-results)" ]; then
-            allure generate reports/allure-results -o reports/allure-report --clean
-            echo "✅ Allure report generated at reports/allure-report"
-          else
-            echo "⚠️ No Allure results found, skipping report generation."
-          fi
+          allure generate reports/allure-results -o reports/allure-report --clean
+          echo "✅ Allure report generated at reports/allure-report"
           ls -lR reports/allure-report
 
-      - name: Deploy Allure Report to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v6
+      # Step 6: Upload Allure Report as artifact
+      - name: Upload Allure Report Artifact
+        uses: actions/upload-artifact@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./reports/allure-report
+          name: allure-report
+          path: reports/allure-report
