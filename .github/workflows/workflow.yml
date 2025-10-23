@@ -25,18 +25,17 @@ jobs:
           python-version: '3.11'
 
       # Step 3: Install dependencies
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install selenium webdriver-manager allure-pytest
 
-      # Step 4: Install Chrome dependencies for CI
-      - name: Install Chrome and required libraries
+      # Step 4: Install Chrome and required libraries for headless mode
+      - name: Install Chrome and libraries
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget unzip libnss3 libxss1 libappindicator3-1 fonts-liberation
-
+          sudo apt-get install -y wget unzip libnss3 libxss1 libappindicator3-1 fonts-liberation libatk-bridge2.0-0 libgtk-3-0 libx11-xcb1 libasound2
           wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
           sudo apt install -y ./google-chrome-stable_current_amd64.deb
 
@@ -45,7 +44,7 @@ jobs:
         run: |
           wget https://github.com/allure-framework/allure2/releases/download/2.29.0/allure-2.29.0.tgz
           tar -zxvf allure-2.29.0.tgz -C /opt/
-          sudo ln -s /opt/allure-2.29.0/bin/allure /usr/bin/allure
+          sudo ln -sf /opt/allure-2.29.0/bin/allure /usr/bin/allure
           allure --version
 
       # Step 6: Run tests and collect Allure results
@@ -57,10 +56,17 @@ jobs:
       # Step 7: Debug Allure results
       - name: List Allure Results
         run: |
-          echo "Contents of Allure results:"
-          ls -lR reports/allure-results
+          echo "Workspace: $GITHUB_WORKSPACE"
+          echo "Listing reports/allure-results contents:"
+          ls -lR reports/allure-results || true
+          echo "File sizes and first 20 lines of JSON files:"
+          for f in reports/allure-results/*; do
+            echo "=== $f ==="
+            ls -lh "$f"
+            head -n 20 "$f" || true
+          done
 
-      # Step 8: Generate Allure Report
+      # Step 8: Generate Allure report
       - name: Generate Allure Report
         run: |
           mkdir -p reports/allure-report
@@ -68,11 +74,19 @@ jobs:
             allure generate reports/allure-results -o reports/allure-report --clean
             echo "✅ Allure report generated successfully at reports/allure-report"
           else
-            echo "⚠️ No Allure results found!"
+            echo "⚠️ No Allure results found! Skipping report generation."
           fi
+          ls -lR reports/allure-report
 
-      # Step 9: Upload Allure Report
-      - name: Upload Allure Report
+      # Step 9: Upload Allure results (raw) artifact
+      - name: Upload Allure Results Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: reports/allure-results
+
+      # Step 10: Upload Allure report (generated) artifact
+      - name: Upload Allure Report Artifact
         uses: actions/upload-artifact@v4
         with:
           name: allure-report
