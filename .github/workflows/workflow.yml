@@ -31,7 +31,7 @@ jobs:
           pip install -r requirements.txt
           pip install selenium webdriver-manager allure-pytest
 
-      # Step 4: Install Chrome (for Selenium)
+      # Step 4: Install Google Chrome (for Selenium)
       - name: Install Google Chrome
         run: |
           sudo apt-get update
@@ -39,27 +39,34 @@ jobs:
           wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
           sudo apt install -y ./google-chrome-stable_current_amd64.deb
 
-      # Step 5: Run tests and collect Allure results
+      # Step 5: Install Allure Commandline
+      - name: Install Allure Commandline
+        run: |
+          sudo apt-add-repository ppa:qameta/allure -y
+          sudo apt-get update
+          sudo apt-get install -y allure
+          allure --version
+
+      # Step 6: Run tests and collect Allure results
       - name: Run PyTest tests
         run: |
           mkdir -p reports/allure-results
           pytest --alluredir=reports/allure-results --disable-warnings -v
 
-      # Step 6: Debug Allure results (optional, useful for CI)
+      # Step 7: List Allure results (debugging)
       - name: List Allure Results
         run: |
           echo "Contents of Allure results:"
           ls -R reports/allure-results
 
-      # Step 7: Generate Allure Report manually
+      # Step 8: Generate Allure Report
       - name: Generate Allure Report
         run: |
-          pip install allure-pytest
           mkdir -p reports/allure-report
           allure generate reports/allure-results -o reports/allure-report --clean
-          echo "Allure report generated at reports/allure-report"
+          echo "✅ Allure report generated successfully at reports/allure-report"
 
-      # Step 8: Upload Allure report as artifact
+      # Step 9: Upload Allure Report as an artifact
       - name: Upload Allure Report
         uses: actions/upload-artifact@v4
         with:
