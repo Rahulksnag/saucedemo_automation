@@ -7,8 +7,12 @@ from selenium.webdriver.edge.options import Options as EdgeOptions
 
 
 def get_driver(browser_name="chrome"):
+    """
+    Create a Selenium WebDriver instance.
+    Automatically detects CI environment (GitHub Actions) and enables headless mode.
+    """
     # Detect if running in CI (GitHub Actions)
-    headless = os.getenv("GITHUB_ACTIONS", "false") == "true"
+    headless = os.getenv("GITHUB_ACTIONS", "false").lower() == "true"
 
     if browser_name.lower() == "chrome":
         chrome_options = ChromeOptions()
@@ -27,6 +31,7 @@ def get_driver(browser_name="chrome"):
         chrome_options.add_experimental_option('useAutomationExtension', False)
 
         if headless:
+            # CI / headless flags
             chrome_options.add_argument("--headless=new")
             chrome_options.add_argument("--no-sandbox")
             chrome_options.add_argument("--disable-dev-shm-usage")
@@ -65,6 +70,9 @@ def get_driver(browser_name="chrome"):
 
 @pytest.fixture(params=["chrome", "edge"])
 def setup(request):
+    """
+    Pytest fixture to initialize and yield a driver instance per test.
+    """
     driver = get_driver(request.param)
     yield driver
     driver.quit()
