@@ -3,10 +3,10 @@ pipeline {
 
     environment {
         VENV_PATH = "venv\\Scripts\\activate"
+        GITHUB_ACTIONS = "true"  // Enable headless mode in conftest.py
     }
 
     stages {
-
         stage('Checkout') {
             steps {
                 echo "Checking out the code from GitHub..."
@@ -27,25 +27,12 @@ pipeline {
         }
 
         stage('Run Tests') {
-            parallel {
-                stage('Chrome Tests') {
-                    steps {
-                        echo "Running tests on Chrome..."
-                        bat """
-                            call ${VENV_PATH}
-                            pytest --browser chrome --alluredir=reports/allure-results/chrome -v -s
-                        """
-                    }
-                }
-                stage('Edge Tests') {
-                    steps {
-                        echo "Running tests on Edge..."
-                        bat """
-                            call ${VENV_PATH}
-                            pytest --browser edge --alluredir=reports/allure-results/edge -v -s
-                        """
-                    }
-                }
+            steps {
+                echo "Running all tests on both Chrome and Edge..."
+                bat """
+                    call ${VENV_PATH}
+                    pytest --alluredir=reports/allure-results --disable-warnings -v
+                """
             }
         }
 
@@ -54,10 +41,7 @@ pipeline {
                 echo "Generating Allure report..."
                 allure([
                     includeProperties: false,
-                    results: [
-                        [path: 'reports/allure-results/chrome'],
-                        [path: 'reports/allure-results/edge']
-                    ]
+                    results: [[path: 'reports/allure-results']]
                 ])
             }
         }
