@@ -31,15 +31,15 @@ jobs:
           pip install -r requirements.txt
           pip install selenium webdriver-manager allure-pytest
 
-      # Step 4: Install Google Chrome (for Selenium)
-      - name: Install Google Chrome
+      # Step 4: Install Chrome dependencies for CI
+      - name: Install Chrome and required libraries
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget unzip
+          sudo apt-get install -y wget unzip fontconfig libnss3 libgconf-2-4 libxss1 libappindicator3-1 libasound2
           wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
           sudo apt install -y ./google-chrome-stable_current_amd64.deb
 
-      # Step 5: Install Allure Commandline (from GitHub release)
+      # Step 5: Install Allure Commandline
       - name: Install Allure Commandline
         run: |
           wget https://github.com/allure-framework/allure2/releases/download/2.29.0/allure-2.29.0.tgz
@@ -53,20 +53,24 @@ jobs:
           mkdir -p reports/allure-results
           pytest --alluredir=reports/allure-results --disable-warnings -v
 
-      # Step 7: List Allure results (debugging)
+      # Step 7: Debug Allure results
       - name: List Allure Results
         run: |
           echo "Contents of Allure results:"
-          ls -R reports/allure-results
+          ls -lR reports/allure-results
 
       # Step 8: Generate Allure Report
       - name: Generate Allure Report
         run: |
           mkdir -p reports/allure-report
-          allure generate reports/allure-results -o reports/allure-report --clean
-          echo "✅ Allure report generated successfully at reports/allure-report"
+          if [ "$(ls -A reports/allure-results)" ]; then
+            allure generate reports/allure-results -o reports/allure-report --clean
+            echo "✅ Allure report generated successfully at reports/allure-report"
+          else
+            echo "⚠️ No Allure results found!"
+          fi
 
-      # Step 9: Upload Allure Report as an artifact
+      # Step 9: Upload Allure Report
       - name: Upload Allure Report
         uses: actions/upload-artifact@v4
         with:
