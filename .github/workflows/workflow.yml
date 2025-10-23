@@ -49,9 +49,12 @@ jobs:
           echo "✅ Allure report generated at reports/allure-report"
           ls -lR reports/allure-report
 
-      # Step 6: Upload Allure Report as artifact
-      - name: Upload Allure Report Artifact
-        uses: actions/upload-artifact@v4
+      # Step 6: Deploy Allure Report to GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v5
         with:
-          name: allure-report
-          path: reports/allure-report
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: reports/allure-report
+          publish_branch: gh-pages
+          user_name: github-actions
+          user_email: github-actions@github.com
